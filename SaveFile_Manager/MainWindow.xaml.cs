@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 
-
 namespace SaveFile_Manager {
     public partial class MainWindow : Window {
         private string saveFilePath = @"";
@@ -13,22 +12,21 @@ namespace SaveFile_Manager {
 
         public MainWindow()
         {
+            InitializeComponent();
             string appDataLocal = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             saveFilePath = Path.Combine(appDataLocal, "Sandfall", "Saved", "SaveGames");
-            InitializeComponent();
-            RefreshLists();
+            RefreshCustomSaveDataList();
         }
-
 
         private void refreshData_Click(object sender, RoutedEventArgs e)
         {
             if (Directory.Exists(saveFilePath))
             {
-                RefreshLists();
+                RefreshCustomSaveDataList();
             }
             else
             {
-                MessageBox.Show("Invalid base folder.");
+                ShowDialogMessage("Invalid base folder.");
             }
         }
 
@@ -37,59 +35,40 @@ namespace SaveFile_Manager {
             string selectedFolderName = backedUpFiles.SelectedItem as string;
             if (string.IsNullOrEmpty(selectedFolderName))
             {
-                MessageBox.Show("No backup selected.");
+                ShowDialogMessage("No backup selected.");
                 return;
             }
 
-            // Create the custom confirmation dialog for loading
-            var confirmDialog = new ConfirmDialog($"This will replace your current save folder. Do you want to continue?");
-            confirmDialog.Owner = this; // Set the parent window (MainWindow) for positioning
-            confirmDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner; // Position it relative to MainWindow
-            confirmDialog.ShowDialog(); // Show the dialog
+            if (!ShowConfirmationDialog("This will replace your current save folder. Do you want to continue?"))
+                return;
 
-            // Proceed based on the user's response
-            if (confirmDialog.Result == MessageBoxResult.Yes)
+            try
             {
-                try
+                string customSaveFilesPath = Path.Combine(saveFilePath, "CustomSaveFiles");
+                string sourceBackupFolder = Path.Combine(customSaveFilesPath, selectedFolderName);
+                string destSteamIdFolder = Path.Combine(saveFilePath, Path.GetFileName(GetSteamIdFolder()));
+
+                if (string.IsNullOrEmpty(GetSteamIdFolder()))
                 {
-                    // Define the path for CustomSaveFiles
-                    string customSaveFilesPath = Path.Combine(saveFilePath, "CustomSaveFiles");
-                    string sourceBackupFolder = Path.Combine(customSaveFilesPath, selectedFolderName);
-                    string destSteamIdFolder = Path.Combine(saveFilePath, Path.GetFileName(GetSteamIdFolder()));
-
-                    // Check if the Steam ID folder exists
-                    if (string.IsNullOrEmpty(GetSteamIdFolder()))
-                    {
-                        // Show error if the Steam ID folder does not exist
-                        MessageBox.Show("Error: Steam ID folder not found. Unable to load backup.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        return; // Stop the backup loading process if the folder doesn't exist
-                    }
-
-                    // Delete existing save folder
-                    if (Directory.Exists(destSteamIdFolder))
-                    {
-                        Directory.Delete(destSteamIdFolder, true);
-                    }
-
-                    // Copy the selected backup folder to the destination
-                    CopyDirectory(sourceBackupFolder, destSteamIdFolder);
-
-                    // Show the confirmation dialog instead of MessageBox
-                    var confirmDialogSuccess = new ConfirmDialog("Backup loaded successfully!");
-                    confirmDialogSuccess.Owner = this;
-                    confirmDialogSuccess.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-                    confirmDialogSuccess.ShowDialog(); // Show the dialog after success
-
-                    RefreshLists(); // Refresh the list of backups after loading
+                    ShowDialogMessage("Error: Steam ID folder not found. Unable to load backup.");
+                    return;
                 }
-                catch (Exception ex)
+
+                if (Directory.Exists(destSteamIdFolder))
                 {
-                    MessageBox.Show("Error during loading backup: " + ex.Message);
+                    Directory.Delete(destSteamIdFolder, true);
                 }
+
+                CopyDirectory(sourceBackupFolder, destSteamIdFolder);
+
+                ShowDialogMessage("Backup loaded successfully!");
+                RefreshCustomSaveDataList();
+            }
+            catch (Exception ex)
+            {
+                ShowDialogMessage("Error during loading backup:\n" + ex.Message);
             }
         }
-
-
 
         private void CopyDirectory(string sourceDir, string destDir)
         {
@@ -121,7 +100,7 @@ namespace SaveFile_Manager {
         {
             if (string.IsNullOrEmpty(saveFilePath) || !Directory.Exists(saveFilePath))
             {
-                MessageBox.Show("Invalid save folder.");
+                ShowDialogMessage("Invalid save folder.");
                 return;
             }
 
@@ -132,15 +111,14 @@ namespace SaveFile_Manager {
             string backupName = inputDialog.InputText.Trim();
             if (string.IsNullOrEmpty(backupName))
             {
-                MessageBox.Show("Backup name cannot be empty.");
+                ShowDialogMessage("Backup name cannot be empty.");
                 return;
             }
 
-            // Get the Steam ID folder
             string steamIdFolder = GetSteamIdFolder();
             if (string.IsNullOrEmpty(steamIdFolder))
             {
-                MessageBox.Show("Steam ID folder not found.");
+                ShowDialogMessage("Steam ID folder not found.");
                 return;
             }
 
@@ -149,32 +127,25 @@ namespace SaveFile_Manager {
 
             try
             {
-                // Ensure the CustomSaveFiles directory exists
                 if (!Directory.Exists(customSaveFilesPath))
                 {
                     Directory.CreateDirectory(customSaveFilesPath);
                 }
-
-                // Delete the target folder if it exists
                 if (Directory.Exists(targetFolder))
                 {
                     Directory.Delete(targetFolder, true);
                 }
-
-                // Copy only the Steam ID folder
                 DirectoryCopy(steamIdFolder, targetFolder, true);
-
-                // Refresh the backup list
-                RefreshLists();
+                RefreshCustomSaveDataList();
+                ShowDialogMessage("Backup saved successfully!");
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error saving backup: " + ex.Message);
+                ShowDialogMessage("Error saving backup:\n" + ex.Message);
             }
         }
 
-
-        private void RefreshLists()
+        private void RefreshCustomSaveDataList()
         {
             backedUpFiles.Items.Clear();
             string customSaveFilesPath = Path.Combine(saveFilePath, "CustomSaveFiles");
@@ -187,10 +158,9 @@ namespace SaveFile_Manager {
             }
             else
             {
-                MessageBox.Show("CustomSaveFiles folder not found.");
+                ShowDialogMessage("CustomSaveFiles folder not found.");
             }
         }
-
 
         private static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
         {
@@ -228,7 +198,7 @@ namespace SaveFile_Manager {
             }
             else
             {
-                MessageBox.Show("SaveGames folder not found.");
+                ShowDialogMessage("SaveGames folder not found.");
             }
         }
 
@@ -238,49 +208,55 @@ namespace SaveFile_Manager {
 
             if (string.IsNullOrEmpty(selectedFolderName))
             {
-                MessageBox.Show("No backup selected.");
+                ShowDialogMessage("No backup selected.");
                 return;
             }
 
-            // Create the custom confirmation dialog for deletion
-            var confirmDialog = new ConfirmDialog($"Delete '{selectedFolderName}'?");
-            confirmDialog.Owner = this; // Set the parent window (MainWindow) for positioning
-            confirmDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner; // Position it relative to MainWindow
-            confirmDialog.ShowDialog(); // Show the dialog
+            if (!ShowConfirmationDialog($"Delete '{selectedFolderName}'?"))
+                return;
 
-            // Proceed based on the user's response
-            if (confirmDialog.Result == MessageBoxResult.Yes)
+            try
             {
-                try
-                {
-                    // Perform the delete operation as usual
-                    string customSaveFilesPath = Path.Combine(saveFilePath, "CustomSaveFiles");
-                    string folderToDelete = Path.Combine(customSaveFilesPath, selectedFolderName);
+                string customSaveFilesPath = Path.Combine(saveFilePath, "CustomSaveFiles");
+                string folderToDelete = Path.Combine(customSaveFilesPath, selectedFolderName);
 
-                    if (Directory.Exists(folderToDelete))
-                    {
-                        Directory.Delete(folderToDelete, true);
-                        RefreshLists(); // Update the ListBox
-
-                        // Show the success confirmation dialog
-                        var confirmDialogSuccess = new ConfirmDialog($"Backup '{selectedFolderName}' deleted successfully.");
-                        confirmDialogSuccess.Owner = this;
-                        confirmDialogSuccess.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-                        confirmDialogSuccess.ShowDialog(); // Show the dialog after success
-                    }
-                    else
-                    {
-                        MessageBox.Show("Error: Selected backup folder not found.");
-                    }
-                }
-                catch (Exception ex)
+                if (Directory.Exists(folderToDelete))
                 {
-                    MessageBox.Show("Error during deletion: " + ex.Message);
+                    Directory.Delete(folderToDelete, true);
+                    RefreshCustomSaveDataList();
+                    ShowDialogMessage($"Backup '{selectedFolderName}' deleted successfully.");
                 }
+                else
+                {
+                    ShowDialogMessage("Error: Selected backup folder not found.");
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowDialogMessage("Error during deletion:\n" + ex.Message);
             }
         }
 
+        private void ShowDialogMessage(string message)
+        {
+            var dialog = new ConfirmDialog(message, isConfirmation: false)
+            {
+                Owner = this,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+            dialog.ShowDialog();
+        }
 
 
+        private bool ShowConfirmationDialog(string message)
+        {
+            var dialog = new ConfirmDialog(message)
+            {
+                Owner = this,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+            dialog.ShowDialog();
+            return dialog.Result == MessageBoxResult.Yes;
+        }
     }
 }

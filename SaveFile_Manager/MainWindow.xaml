@@ -5,23 +5,32 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SaveFile_Manager"
         mc:Ignorable="d"
-        Title="MainWindow" Height="467" Width="604"
-        ResizeMode="NoResize">
-    <Grid Margin="10,0,10,0" Height="428" VerticalAlignment="Top">
+        Title="Clair Obscure: Expedition 33 SaveFile Manager" Height="467" Width="604"
+        MinWidth="350" MinHeight="300"
+        ResizeMode="CanResize">
+    <Grid Margin="10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="423*"/>
-            <RowDefinition Height="34*"/>
-            <RowDefinition Height="305*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <ListBox x:Name="backedUpFiles" Margin="91,127,91,0" Grid.RowSpan="3" Height="250" VerticalAlignment="Top"/>
-        <Button x:Name="openExplorerButton" Content="Open Explorer" Margin="0,25,0,0" VerticalAlignment="Top" Height="27" Click="openExplorerButton_Click" HorizontalAlignment="Center" Width="144"/>
-        <Button x:Name="refreshData" Content="Refresh" Margin="0,90,0,0" VerticalAlignment="Top" Click="refreshData_Click" Height="23" RenderTransformOrigin="-0.222,0.915" HorizontalAlignment="Center" Width="66"/>
-        <Button x:Name="loadBackup" Content="Load&#xA;" Margin="425,90,91,0" VerticalAlignment="Top" RenderTransformOrigin="0.404,6.665" Height="22" Click="loadBackup_Click"/>
-        <Button x:Name="saveBackup" Content="Save" Margin="91,90,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.404,6.665" Height="22" Click="saveBackup_Click" HorizontalAlignment="Left" Width="66"/>
-        <TextBlock Margin="91,135,0,0" TextWrapping="Wrap" VerticalAlignment="Top" HorizontalAlignment="Left" Width="154" RenderTransformOrigin="5.266,0.349" Grid.Row="2"><Run Language="en-gb" Text="Backed Up Save Files"/></TextBlock>
-        <Button x:Name="deleteSelectedBackupFile" Content="Delete" HorizontalAlignment="Center" VerticalAlignment="Top" Grid.Row="2" Width="50" Background="#FFE03F3F" Click="deleteSelectedBackupFile_Click" Margin="0,133,0,0"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="0" Margin="0,0,0,10">
+            <Button x:Name="openExplorerButton" Content="Open Explorer" Height="27" Click="openExplorerButton_Click" Width="144" Margin="5"/>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="0,0,0,10">
+            <Button x:Name="saveBackup" Content="Save" Height="22" Click="saveBackup_Click" Width="66" Margin="5"/>
+            <Button x:Name="refreshData" Content="Refresh" Click="refreshData_Click" Height="23" Width="66" Margin="5"/>
+            <Button x:Name="loadBackup" Content="Load" Height="22" Click="loadBackup_Click" Width="66" Margin="5"/>
+        </StackPanel>
+
+        <ListBox x:Name="backedUpFiles" Grid.Row="2" Margin="0,0,0,10"/>
+
+        <Grid Grid.Row="3">
+            <TextBlock Text="CustomSaveFiles" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+            <Button x:Name="deleteSelectedBackupFile" Content="Delete" Background="#FFE03F3F" Click="deleteSelectedBackupFile_Click" VerticalAlignment="Center" HorizontalAlignment="Center" Width="70" Height="25"/>
+        </Grid>
     </Grid>
-
-
-
 </Window>

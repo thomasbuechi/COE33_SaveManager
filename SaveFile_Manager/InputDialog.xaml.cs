@@ -4,7 +4,7 @@ using System.Printing;
 using System.Text;
 using System.Windows;
 
-namespace SaveFile_Manager  // Replace with your actual namespace
+namespace SaveFile_Manager
 {
     public partial class InputDialog : Window {
         public string InputText { get; private set; }

@@ -1,63 +1,30 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
-using System.Text;
-using System.Text.RegularExpressions;
+using System.Linq;
 using System.Windows;
 
+
 namespace SaveFile_Manager {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window {
         private string saveFilePath = @"";
-        private string settingsFile = "config.txt"; // You can change this to a more specific path
-        
 
         private const string CustomSaveFilesFolderName = "CustomSaveFiles";
-        private const string MainSaveFolderName = "76561197984330337"; // or whatever the folder name is under SaveGames
-
 
         public MainWindow()
         {
+            string appDataLocal = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            saveFilePath = Path.Combine(appDataLocal, "Sandfall", "Saved", "SaveGames");
             InitializeComponent();
-            if (File.Exists(settingsFile))
-            {
-                saveFilePath = File.ReadAllText(settingsFile).Trim();
-            }
-            else
-            {
-                saveFilePath = ""; // Or set to some default
-            }
-
-            dataPath.Text = saveFilePath;
             RefreshLists();
-            PopulateExpeditionComboBox();
         }
 
-        private void setPath_Click(object sender, RoutedEventArgs e)
-        {
-            saveFilePath = dataPath.Text;
-            if (Directory.Exists(saveFilePath))
-            {
-                File.WriteAllText(settingsFile, saveFilePath); // Save to settings file
-                RefreshLists();
-            }
-            else
-            {
-                MessageBox.Show("Invalid base folder.");
-            }
-        }
 
         private void refreshData_Click(object sender, RoutedEventArgs e)
         {
-            // Ensure the base folder exists
             if (Directory.Exists(saveFilePath))
             {
-                // Get the selected expedition filter from the ComboBox
-                string expeditionFilter = expeditionComboBox.SelectedItem as string;
-
-                // Call RefreshLists() with the selected expedition filter to refresh both folders
-                RefreshLists(expeditionFilter);
+                RefreshLists();
             }
             else
             {
@@ -67,294 +34,252 @@ namespace SaveFile_Manager {
 
         private void loadBackup_Click(object sender, RoutedEventArgs e)
         {
-            string currentFolder = dataPath.Text.Trim(); // This is the original game save folder (e.g., ...\76561197984330337)
-            if (string.IsNullOrEmpty(currentFolder) || !Directory.Exists(currentFolder))
+            string selectedFolderName = backedUpFiles.SelectedItem as string;
+            if (string.IsNullOrEmpty(selectedFolderName))
             {
-                MessageBox.Show("Invalid base folder.");
+                MessageBox.Show("No backup selected.");
                 return;
             }
 
-            string selectedFile = backedUpFiles.SelectedItem as string;
-            if (string.IsNullOrEmpty(selectedFile))
-            {
-                MessageBox.Show("No file selected.");
-                return;
-            }
+            // Create the custom confirmation dialog for loading
+            var confirmDialog = new ConfirmDialog($"This will replace your current save folder. Do you want to continue?");
+            confirmDialog.Owner = this; // Set the parent window (MainWindow) for positioning
+            confirmDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner; // Position it relative to MainWindow
+            confirmDialog.ShowDialog(); // Show the dialog
 
-            MessageBoxResult result = MessageBox.Show(
-                "Do you want to load this file?",
-                "Load Confirmation",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question
-            );
-
-            if (result == MessageBoxResult.Yes)
+            // Proceed based on the user's response
+            if (confirmDialog.Result == MessageBoxResult.Yes)
             {
                 try
                 {
-                    // Use saveFilePath to determine the CustomSaveFiles path (one level up from original folder)
-                    string customSaveFilesPath = Path.Combine(Path.GetDirectoryName(saveFilePath), "CustomSaveFiles");
+                    // Define the path for CustomSaveFiles
+                    string customSaveFilesPath = Path.Combine(saveFilePath, "CustomSaveFiles");
+                    string sourceBackupFolder = Path.Combine(customSaveFilesPath, selectedFolderName);
+                    string destSteamIdFolder = Path.Combine(saveFilePath, Path.GetFileName(GetSteamIdFolder()));
 
-                    string sourceFile = Path.Combine(customSaveFilesPath, selectedFile);
-                    if (!File.Exists(sourceFile))
+                    // Check if the Steam ID folder exists
+                    if (string.IsNullOrEmpty(GetSteamIdFolder()))
                     {
-                        MessageBox.Show("Selected file does not exist in CustomSaveFiles.");
-                        return;
+                        // Show error if the Steam ID folder does not exist
+                        MessageBox.Show("Error: Steam ID folder not found. Unable to load backup.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return; // Stop the backup loading process if the folder doesn't exist
                     }
 
-                    // Destination is the original save directory (currentFolder)
-                    string destFile = Path.Combine(currentFolder, RemovePrefix(selectedFile)); // Strip prefix
+                    // Delete existing save folder
+                    if (Directory.Exists(destSteamIdFolder))
+                    {
+                        Directory.Delete(destSteamIdFolder, true);
+                    }
 
-                    File.Copy(sourceFile, destFile, true);
+                    // Copy the selected backup folder to the destination
+                    CopyDirectory(sourceBackupFolder, destSteamIdFolder);
 
-                    RefreshLists(expeditionComboBox.SelectedItem as string);
+                    // Show the confirmation dialog instead of MessageBox
+                    var confirmDialogSuccess = new ConfirmDialog("Backup loaded successfully!");
+                    confirmDialogSuccess.Owner = this;
+                    confirmDialogSuccess.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                    confirmDialogSuccess.ShowDialog(); // Show the dialog after success
+
+                    RefreshLists(); // Refresh the list of backups after loading
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error loading file: " + ex.Message);
+                    MessageBox.Show("Error during loading backup: " + ex.Message);
                 }
-            }
-            else
-            {
-                MessageBox.Show("Load operation cancelled.");
             }
         }
 
 
 
+        private void CopyDirectory(string sourceDir, string destDir)
+        {
+            Directory.CreateDirectory(destDir);
 
+            foreach (string file in Directory.GetFiles(sourceDir))
+            {
+                string destFile = Path.Combine(destDir, Path.GetFileName(file));
+                File.Copy(file, destFile, true);
+            }
 
+            foreach (string subDir in Directory.GetDirectories(sourceDir))
+            {
+                string destSubDir = Path.Combine(destDir, Path.GetFileName(subDir));
+                CopyDirectory(subDir, destSubDir);
+            }
+        }
 
+        string GetSteamIdFolder()
+        {
+            string appDataLocal = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string saveGamesPath = Path.Combine(appDataLocal, "Sandfall", "Saved", "SaveGames");
+
+            return Directory.GetDirectories(saveGamesPath)
+                            .FirstOrDefault(d => Path.GetFileName(d).StartsWith("765"));
+        }
 
         private void saveBackup_Click(object sender, RoutedEventArgs e)
         {
-            string currentFolder = dataPath.Text.Trim();
-
-            if (string.IsNullOrEmpty(currentFolder) || !Directory.Exists(currentFolder))
+            if (string.IsNullOrEmpty(saveFilePath) || !Directory.Exists(saveFilePath))
             {
-                MessageBox.Show("Invalid base folder.");
+                MessageBox.Show("Invalid save folder.");
                 return;
             }
 
-            string selectedFile = currentSaveFiles.SelectedItem as string;
-
-            if (string.IsNullOrEmpty(selectedFile))
-            {
-                MessageBox.Show("No file selected.");
-                return;
-            }
-
-            string sourceFile = Path.Combine(currentFolder, selectedFile);
-            if (!File.Exists(sourceFile))
-            {
-                MessageBox.Show("Selected file does not exist.");
-                return;
-            }
-
-            // Show input popup — no extra button in the main UI
             var inputDialog = new InputDialog("") { Owner = this };
             if (inputDialog.ShowDialog() != true)
                 return;
 
-            string prefix = inputDialog.InputText.Trim();
-
-            try
+            string backupName = inputDialog.InputText.Trim();
+            if (string.IsNullOrEmpty(backupName))
             {
-                // Use saveFilePath to determine the target folder, and change the ending to "CustomSaveFiles"
-                string targetFolder = Path.Combine(Path.GetDirectoryName(saveFilePath), "CustomSaveFiles"); // Use the user-defined path
-                Directory.CreateDirectory(targetFolder);
-
-                string fileName = Path.GetFileName(selectedFile);
-
-                // Clean the prefix by removing any trailing underscores
-                string cleanedPrefix = CleanPrefix(prefix);
-
-                // Combine cleaned prefix with the file name
-                string targetFileName = cleanedPrefix + "_" + fileName;
-
-                string destFile = Path.Combine(targetFolder, targetFileName);
-
-                // Copy the file to the destination folder
-                File.Copy(sourceFile, destFile, true);
-
-                // Refresh the lists after saving a backup
-                string expeditionFilter = expeditionComboBox.SelectedItem as string; // Get current combo box selection
-                RefreshLists(expeditionFilter); // Pass the filter to make sure lists are updated with the right files
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error saving file: " + ex.Message);
-            }
-        }
-
-        string GetSteamIdFolder(string saveGamesPath)
-        {
-            var steamIdDir = Directory.GetDirectories(saveGamesPath)
-                                      .FirstOrDefault(d => Path.GetFileName(d).StartsWith("765"));
-            return steamIdDir;
-        }
-
-
-
-        private string CleanPrefix(string prefix)
-        {
-            // Trim whitespace
-            prefix = prefix.Trim();
-
-            // Remove only the underscore if the prefix ends with one and is followed by EXPEDITION later
-            if (prefix.EndsWith("_"))
-            {
-                prefix = prefix.TrimEnd('_');
-            }
-
-            return prefix;
-        }
-
-        private string RemovePrefix(string fileName)
-        {
-            fileName = fileName.Trim();
-
-            int index = fileName.IndexOf("EXPEDITION_", StringComparison.OrdinalIgnoreCase);
-            if (index >= 0)
-            {
-                return fileName.Substring(index); // Keep "EXPEDITION_..." onward
-            }
-
-            // If "EXPEDITION_" isn't found, fallback to original behavior
-            int underscoreIndex = fileName.IndexOf("_");
-            if (underscoreIndex > 0)
-            {
-                return fileName.Substring(underscoreIndex + 1);
-            }
-
-            return fileName;
-        }
-
-
-        private void refreshDataBackedUp_Click(object sender, RoutedEventArgs e)
-        {
-            string customSaveFilesPath = @"C:\Users\balli\AppData\Local\Sandfall\Saved\SaveGames\76561197984330337\CustomSaveFiles";
-            string keyword = "CustomSaveFiles";
-            int index = customSaveFilesPath.IndexOf(keyword, StringComparison.OrdinalIgnoreCase);
-            if (index < 0)
-            {
+                MessageBox.Show("Backup name cannot be empty.");
                 return;
             }
 
-            int start = index + keyword.Length;
-            string trimmedPath = customSaveFilesPath.Length > start + 1 ? customSaveFilesPath.Substring(start + 1) : string.Empty;
-
-            if (Directory.Exists(customSaveFilesPath))
+            // Get the Steam ID folder
+            string steamIdFolder = GetSteamIdFolder();
+            if (string.IsNullOrEmpty(steamIdFolder))
             {
-                foreach (string filePath in Directory.GetFiles(customSaveFilesPath, "*", SearchOption.AllDirectories))
-                {
-                    string relativePath = filePath.Substring(index + keyword.Length + 1);
-                    backedUpFiles.Items.Add(relativePath);
-                }
+                MessageBox.Show("Steam ID folder not found.");
+                return;
             }
-            RefreshLists();
+
+            string customSaveFilesPath = Path.Combine(saveFilePath, "CustomSaveFiles");
+            string targetFolder = Path.Combine(customSaveFilesPath, backupName);
+
+            try
+            {
+                // Ensure the CustomSaveFiles directory exists
+                if (!Directory.Exists(customSaveFilesPath))
+                {
+                    Directory.CreateDirectory(customSaveFilesPath);
+                }
+
+                // Delete the target folder if it exists
+                if (Directory.Exists(targetFolder))
+                {
+                    Directory.Delete(targetFolder, true);
+                }
+
+                // Copy only the Steam ID folder
+                DirectoryCopy(steamIdFolder, targetFolder, true);
+
+                // Refresh the backup list
+                RefreshLists();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error saving backup: " + ex.Message);
+            }
         }
 
 
-            private void RefreshLists()
-            {
-                string expeditionFilter = expeditionComboBox.SelectedItem as string ?? "All Expeditions";
-                RefreshLists(expeditionFilter);
-            }
- 
-
-        private void PopulateExpeditionComboBox()
+        private void RefreshLists()
         {
-            // Clear any existing items in the ComboBox
-            expeditionComboBox.Items.Clear();
-
-            // Add a default "All Expeditions" option
-            expeditionComboBox.Items.Add("All Expeditions");
-
-            // Ensure the user-defined path is valid
-            if (Directory.Exists(saveFilePath))
+            backedUpFiles.Items.Clear();
+            string customSaveFilesPath = Path.Combine(saveFilePath, "CustomSaveFiles");
+            if (Directory.Exists(customSaveFilesPath))
             {
-                // A HashSet is used to avoid duplicates in the ComboBox
-                HashSet<string> expeditions = new HashSet<string>();
-
-                // Search for all files matching the pattern "EXPEDITION_*.sav" in the user-defined path
-                foreach (string filePath in Directory.GetFiles(saveFilePath, "EXPEDITION_*.sav", SearchOption.TopDirectoryOnly))
+                foreach (string dir in Directory.GetDirectories(customSaveFilesPath))
                 {
-                    // Get just the file name, e.g., "EXPEDITION_0.sav"
-                    string fileName = Path.GetFileName(filePath);
-
-                    // Extract the expedition number from the file name (e.g., "0" from "EXPEDITION_0.sav")
-                    string expeditionNumber = fileName.Split('_')[1].Split('.')[0]; // Get the number after "EXPEDITION_"
-                    expeditions.Add(expeditionNumber); // Add the expedition number to the set
+                    backedUpFiles.Items.Add(Path.GetFileName(dir));
                 }
-
-                // Add all unique expedition numbers to the ComboBox
-                foreach (var expedition in expeditions.OrderBy(e => e))
-                {
-                    expeditionComboBox.Items.Add(expedition);
-                }
-
-                // Set the default option to "All Expeditions"
-                expeditionComboBox.SelectedIndex = 0;
             }
             else
             {
-                MessageBox.Show("The specified directory does not exist.");
+                MessageBox.Show("CustomSaveFiles folder not found.");
             }
         }
 
 
-
-
-
-        private void RefreshLists(string expeditionFilter)
+        private static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
         {
-            currentSaveFiles.Items.Clear();
-            backedUpFiles.Items.Clear();
+            DirectoryInfo dir = new DirectoryInfo(sourceDirName);
+            DirectoryInfo[] dirs = dir.GetDirectories();
 
-            // === Refresh current save files ===
+            Directory.CreateDirectory(destDirName);
+
+            foreach (FileInfo file in dir.GetFiles())
+            {
+                string temppath = Path.Combine(destDirName, file.Name);
+                file.CopyTo(temppath, true);
+            }
+
+            if (copySubDirs)
+            {
+                foreach (DirectoryInfo subdir in dirs)
+                {
+                    string temppath = Path.Combine(destDirName, subdir.Name);
+                    DirectoryCopy(subdir.FullName, temppath, copySubDirs);
+                }
+            }
+        }
+
+        private void openExplorerButton_Click(object sender, RoutedEventArgs e)
+        {
             if (Directory.Exists(saveFilePath))
             {
-                foreach (string filePath in Directory.GetFiles(saveFilePath, "EXPEDITION_*.sav"))
+                Process.Start(new ProcessStartInfo
                 {
-                    string fileName = Path.GetFileName(filePath);
-
-                    if (expeditionFilter == "All Expeditions" || fileName.Contains($"EXPEDITION_{expeditionFilter}.sav"))
-                    {
-                        currentSaveFiles.Items.Add(fileName);
-                    }
-                }
+                    FileName = saveFilePath,
+                    UseShellExecute = true,
+                    Verb = "open"
+                });
             }
-
-            // === Refresh backed-up files ===
-            string customSaveFilesPath = Path.Combine(Path.GetDirectoryName(saveFilePath), "CustomSaveFiles");
-
-            if (Directory.Exists(customSaveFilesPath))
+            else
             {
-                foreach (string filePath in Directory.GetFiles(customSaveFilesPath, "*_EXPEDITION_?.sav"))
-                {
-                    string fileName = Path.GetFileName(filePath);
+                MessageBox.Show("SaveGames folder not found.");
+            }
+        }
 
-                    if (expeditionFilter == "All Expeditions" ||
-                        Regex.IsMatch(fileName, @$"_EXPEDITION_{expeditionFilter}\.sav$", RegexOptions.IgnoreCase))
+        private void deleteSelectedBackupFile_Click(object sender, RoutedEventArgs e)
+        {
+            string selectedFolderName = backedUpFiles.SelectedItem as string;
+
+            if (string.IsNullOrEmpty(selectedFolderName))
+            {
+                MessageBox.Show("No backup selected.");
+                return;
+            }
+
+            // Create the custom confirmation dialog for deletion
+            var confirmDialog = new ConfirmDialog($"Delete '{selectedFolderName}'?");
+            confirmDialog.Owner = this; // Set the parent window (MainWindow) for positioning
+            confirmDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner; // Position it relative to MainWindow
+            confirmDialog.ShowDialog(); // Show the dialog
+
+            // Proceed based on the user's response
+            if (confirmDialog.Result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    // Perform the delete operation as usual
+                    string customSaveFilesPath = Path.Combine(saveFilePath, "CustomSaveFiles");
+                    string folderToDelete = Path.Combine(customSaveFilesPath, selectedFolderName);
+
+                    if (Directory.Exists(folderToDelete))
                     {
-                        backedUpFiles.Items.Add(fileName);
+                        Directory.Delete(folderToDelete, true);
+                        RefreshLists(); // Update the ListBox
+
+                        // Show the success confirmation dialog
+                        var confirmDialogSuccess = new ConfirmDialog($"Backup '{selectedFolderName}' deleted successfully.");
+                        confirmDialogSuccess.Owner = this;
+                        confirmDialogSuccess.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                        confirmDialogSuccess.ShowDialog(); // Show the dialog after success
                     }
+                    else
+                    {
+                        MessageBox.Show("Error: Selected backup folder not found.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error during deletion: " + ex.Message);
                 }
             }
         }
 
-
-
-
-        private void expeditionComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
-        {
-            // Get the selected expedition filter from the ComboBox
-            string expeditionFilter = expeditionComboBox.SelectedItem as string;
-
-            // Call RefreshLists() to automatically refresh both lists with the selected filter applied
-            RefreshLists(expeditionFilter);
-        }
 
 
     }

@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SaveFile_Manager"
         mc:Ignorable="d"
+        Loaded="MainWindow_Loaded"
         Title="Clair Obscure: Expedition 33 SaveFile Manager by Ballin" Height="467" Width="268"
         MinWidth="350" MinHeight="300"
         ResizeMode="CanResize">
@@ -17,7 +18,7 @@
         </Grid.RowDefinitions>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="0" Margin="0,0,0,10">
-            <Button x:Name="openExplorerButton" Content="Open Explorer" Height="27" Click="openExplorerButton_Click" Width="144" Margin="5"/>
+            <Button x:Name="openExplorerButton" Content="Open SaveGames" Height="27" Click="openExplorerButton_Click" Width="144" Margin="5"/>
         </StackPanel>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="0,0,0,10">

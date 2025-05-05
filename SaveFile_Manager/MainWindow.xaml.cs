@@ -53,7 +53,14 @@ namespace SaveFile_Manager {
 
                 if (string.IsNullOrEmpty(steamIdFolder))
                 {
-                    ShowDialogMessage("Error: Steam ID folder not found. Unable to load backup.");
+                    ShowDialogMessage("Error: Steam ID folder not found. Please resolve this issue manually.");
+                    return;
+                }
+
+                // Check for multiple Steam ID folders
+                if (CountSteamIdFolders() > 1)
+                {
+                    ShowDialogMessage("Error: Multiple Steam ID folders found. Please resolve this issue manually.");
                     return;
                 }
 
@@ -83,6 +90,13 @@ namespace SaveFile_Manager {
                 return;
             }
 
+            // Check for multiple Steam ID folders
+            if (CountSteamIdFolders() > 1)
+            {
+                ShowDialogMessage("Error: Multiple Steam ID folders found. Please resolve this issue manually before creating a new backup.");
+                return;
+            }
+
             var inputDialog = new InputDialog("") { Owner = this };
             if (inputDialog.ShowDialog() != true)
                 return;
@@ -94,18 +108,18 @@ namespace SaveFile_Manager {
                 return;
             }
 
-            string steamIdFolder = GetSteamIdFolder();
-            if (string.IsNullOrEmpty(steamIdFolder))
-            {
-                ShowDialogMessage("Steam ID folder not found.");
-                return;
-            }
-
-            EnsureCustomSaveFilesFolder();
-            string targetFolder = Path.Combine(CustomSaveFilesPath, backupName);
-
             try
             {
+                string steamIdFolder = GetSteamIdFolder();
+                if (string.IsNullOrEmpty(steamIdFolder))
+                {
+                    ShowDialogMessage("Error: Steam ID folder not found. Please resolve this issue manually before creating a new backup.");
+                    return;
+                }
+
+                EnsureCustomSaveFilesFolder();
+                string targetFolder = Path.Combine(CustomSaveFilesPath, backupName);
+
                 if (Directory.Exists(targetFolder))
                 {
                     Directory.Delete(targetFolder, true);
@@ -208,8 +222,31 @@ namespace SaveFile_Manager {
             {
                 return null;
             }
+            string[] steamIdFolders = Directory.GetDirectories(SaveFilePath)
+                        .Where(d => Path.GetFileName(d).StartsWith("765"))
+                        .ToArray();
+            if (steamIdFolders.Length == 1)
+            {
+                return steamIdFolders[0];
+            }
+            else if (steamIdFolders.Length == 0)
+            {
+                return null;
+            }
+            else
+            {
+                return null; 
+            }
+        }
+
+        private int CountSteamIdFolders()
+        {
+            if (!Directory.Exists(SaveFilePath))
+            {
+                return 0;
+            }
             return Directory.GetDirectories(SaveFilePath)
-                            .FirstOrDefault(d => Path.GetFileName(d).StartsWith("765"));
+                    .Count(d => Path.GetFileName(d).StartsWith("765"));
         }
 
         private void CopyDirectory(string sourceDir, string destDir)

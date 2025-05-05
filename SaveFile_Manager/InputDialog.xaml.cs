@@ -1,8 +1,4 @@
-﻿using Microsoft.Win32;
-using System.IO;
-using System.Printing;
-using System.Text;
-using System.Windows;
+﻿using System.Windows;
 
 namespace SaveFile_Manager
 {

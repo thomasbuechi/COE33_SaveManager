@@ -1,5 +1,4 @@
 ﻿using System.Windows;
-using System.Windows.Controls;
 
 namespace SaveFile_Manager {
     public partial class ConfirmDialog : Window {

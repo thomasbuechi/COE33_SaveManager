@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SaveFile_Manager"
         mc:Ignorable="d"
-        Title="Clair Obscure: Expedition 33 SaveFile Manager" Height="467" Width="604"
+        Title="Clair Obscure: Expedition 33 SaveFile Manager by Ballin" Height="467" Width="268"
         MinWidth="350" MinHeight="300"
         ResizeMode="CanResize">
     <Grid Margin="10">

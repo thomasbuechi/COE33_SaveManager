@@ -239,24 +239,24 @@ namespace SaveFile_Manager {
 
         private void ShowDialogMessage(string message)
         {
-            var dialog = new ConfirmDialog(message, isConfirmation: false)
-            {
-                Owner = this,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner
-            };
-            dialog.ShowDialog();
+            ShowDialog(message, isConfirmation: false);
         }
-
 
         private bool ShowConfirmationDialog(string message)
         {
-            var dialog = new ConfirmDialog(message)
+            return ShowDialog(message, isConfirmation: true) == MessageBoxResult.Yes;
+        }
+
+        private MessageBoxResult ShowDialog(string message, bool isConfirmation)
+        {
+            var dialog = new ConfirmDialog(message, isConfirmation)
             {
                 Owner = this,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner
             };
             dialog.ShowDialog();
-            return dialog.Result == MessageBoxResult.Yes;
+            return dialog.Result;
         }
+
     }
 }

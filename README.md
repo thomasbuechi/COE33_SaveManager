@@ -20,7 +20,7 @@
     Your save files for Clair Obscure: Expedition 33 are located within a folder named with your SteamID, which starts with `765...`, in the following directory:
 
     ```
-    C:\Users\Your PC's name\AppData\Local\Sandfall\Saved\SaveGames\
+    C:\Users\Your PC's name\AppData\Local\Sandfall\Saved\SaveGames\765...
     ```
 
     This `765...` folder contains your save slots (e.g., `Expedition0`, `Expedition1`, up to `Expedition9`). If you have multiple save states, **backing up this entire `765...` folder will copy all of them.**

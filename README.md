@@ -52,7 +52,7 @@ C:\Users\Your PC's name\AppData\Local\Sandfall\Saved\SaveGames\CustomSaveFiles
 
 If you choose to load a save file that you've previously backed up using this application, here's what happens:
 
-1.  **Deletion of Current Save:** The application will delete your current `765...` folder from the `SaveGames` permanently.
+1.  **Deletion of Current Save:** The application will delete your current `765...` folder from the `SaveGames` directory permanently.
 2.  **Restoration of Backup:** Your chosen backed-up `765...` folder will then be pasted into the `SaveGames` directory.
 
 **To load this data in the game:**

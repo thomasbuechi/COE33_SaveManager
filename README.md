@@ -10,7 +10,7 @@
 6. Make sure only one Folder with 765... exists inside the SaveGames Folder.
 7. ???
 8. Profit
-   
+
 ## Installation
 **Steam Only so far**
 
@@ -43,6 +43,7 @@ To save your current game state using this application:
 2.  Provide a name for your save.
 
 The created save file (which is a copy of your `765...` SteamID folder) will be stored in the following location:
+
 ```
 C:\Users\Your PC's name\AppData\Local\Sandfall\Saved\SaveGames\CustomSaveFiles
 ```
@@ -51,19 +52,20 @@ C:\Users\Your PC's name\AppData\Local\Sandfall\Saved\SaveGames\CustomSaveFiles
 
 If you choose to load a save file that you've previously backed up using this application, here's what happens:
 
-1.  **Deletion of Current Save:** The application will move your current `765...` folder from the `SaveGames` directory to the Recycle Bin.
+1.  **Deletion of Current Save:** The application will delete your current `765...` folder from the `SaveGames` permanently.
 2.  **Restoration of Backup:** Your chosen backed-up `765...` folder will then be pasted into the `SaveGames` directory.
 
 **To load this data in the game:**
 
 1.  Back out to the **Main Menu**.
-2.  Select the **"Continue"** option. 
+2.  Select the **"Continue"** option.
 3.  Choose the save you want to load and then select **"Continue"**. You'll be able to pick up your game from where you last saved in that backed-up state.
 
 **A Small Visual Note:** The "Continue" save state in the game might not immediately update to reflect the newly loaded save state. This is a visual quirk and usually resolves after a game restart or by loading another save. Rest assured, the correct save data will have been loaded.
 
+**Important Note:** When loading a backed-up save, your current save files are **permanently removed**. They will not be sent to the Recycle Bin and cannot be recovered.
 
 # Additional Application Functions:
 
-* **Delete Button:** When you select a saved game file in the application's list and click the "Delete" button, that specific saved game folder will be moved to your computer's Recycle Bin.
+* **Delete Button:** When you select a saved game file in the application's list and click the "Delete" button, that specific saved game folder will be **permanently deleted** from your system. It will not be moved to your computer's Recycle Bin.
 * **Refresh Button:** If you make any manual changes to the files or folders within the application's working directories (like adding or removing backups directly), clicking the "Refresh" button will update the application's view to reflect these changes.

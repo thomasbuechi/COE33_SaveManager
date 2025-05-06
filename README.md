@@ -6,13 +6,15 @@
 2. Unzip Application
 3. Start Application
 4. Press Open SaveGames button
-5. BACKUP UR OWN FILES (765... Folder, which is your SteamID)
+5. BACKUP YOUR OWN FILES (765... Folder, which is your SteamID)
 6. Make sure only one Folder with 765... exists.
 7. ???
 8. Profit
    
 ## Installation
 **Steam Only so far**
+
+BACKUP YOUR OWN FILES (765... Folder, which is your SteamID)
 1.  **Download:** Download the latest release ZIP file from the [Releases](link/to/your/releases) page.
 2.  **Unzip:** Extract the contents of the downloaded ZIP file to a custom folder of your choice on your computer.
 3.  **Backup Your Save File (Important!):** **It's highly recommended that you create a backup of your current save file before proceeding.** While I've done my best to ensure everything works smoothly, data loss can unfortunately happen, and I won't be able to recover it for you.

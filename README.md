@@ -7,7 +7,7 @@
 3. Start Application
 4. Press Open SaveGames button
 5. BACKUP YOUR OWN FILES (765... Folder, which is your SteamID)
-6. Make sure only one Folder with 765... exists.
+6. Make sure only one Folder with 765... exists inside the SaveGames Folder.
 7. ???
 8. Profit
    

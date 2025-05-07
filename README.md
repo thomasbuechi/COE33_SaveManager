@@ -57,9 +57,7 @@ If you choose to load a save file that you've previously backed up using this ap
 
 **To load this data in the game:**
 
-1.  Back out to the **Main Menu**.
-2.  Select the **"Continue"** option.
-3.  Choose the save you want to load and then select **"Continue"**. You'll be able to pick up your game from where you last saved in that backed-up state.
+1.  Just load the latest save. 
 
 **A Small Visual Note:** The "Continue" save state in the game might not immediately update to reflect the newly loaded save state. This is a visual quirk and usually resolves after a game restart or by loading another save. Rest assured, the correct save data will have been loaded.
 

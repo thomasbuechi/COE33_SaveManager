@@ -55,8 +55,7 @@ namespace SaveFile_Manager {
                     return;
                 }
 
-                // Check for multiple Steam ID folders
-                if (CountSteamIdFolders() > 1)
+                if (CountSteamIdFolders() > 1)
                 {
                     ShowDialogMessage("Error: Multiple Steam ID folders found. Please resolve this issue manually.");
                     return;
@@ -64,12 +63,35 @@ namespace SaveFile_Manager {
 
                 string destSteamIdFolder = Path.Combine(SaveFilePath, Path.GetFileName(steamIdFolder));
 
+                // Preserve game settings files before deletion
+                string sharedSettingsPath = Path.Combine(destSteamIdFolder, "SharedGameUserSettings.sav");
+                string inputSettingsPath = Path.Combine(destSteamIdFolder, "EnhancedInputUserSettings.sav");
+
+                string tempDir = Path.Combine(Path.GetTempPath(), "SandfallSettingsBackup");
+                Directory.CreateDirectory(tempDir);
+
+                if (File.Exists(sharedSettingsPath))
+                    File.Copy(sharedSettingsPath, Path.Combine(tempDir, "SharedGameUserSettings.sav"), true);
+                if (File.Exists(inputSettingsPath))
+                    File.Copy(inputSettingsPath, Path.Combine(tempDir, "EnhancedInputUserSettings.sav"), true);
+
+                // Delete old save
                 if (Directory.Exists(destSteamIdFolder))
                 {
                     Directory.Delete(destSteamIdFolder, true);
                 }
 
+                // Copy backup
                 CopyDirectory(sourceBackupFolder, destSteamIdFolder);
+
+                // Restore preserved settings
+                string restoredSharedPath = Path.Combine(tempDir, "SharedGameUserSettings.sav");
+                string restoredInputPath = Path.Combine(tempDir, "EnhancedInputUserSettings.sav");
+
+                if (File.Exists(restoredSharedPath))
+                    File.Copy(restoredSharedPath, Path.Combine(destSteamIdFolder, "SharedGameUserSettings.sav"), true);
+                if (File.Exists(restoredInputPath))
+                    File.Copy(restoredInputPath, Path.Combine(destSteamIdFolder, "EnhancedInputUserSettings.sav"), true);
 
                 ShowDialogMessage("Backup loaded successfully!");
                 RefreshCustomSaveDataList();
@@ -80,6 +102,7 @@ namespace SaveFile_Manager {
             }
         }
 
+
         private void saveBackup_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrEmpty(SaveFilePath) || !Directory.Exists(SaveFilePath))
@@ -88,7 +111,6 @@ namespace SaveFile_Manager {
                 return;
             }
 
-            // Check for multiple Steam ID folders
             if (CountSteamIdFolders() > 1)
             {
                 ShowDialogMessage("Error: Multiple Steam ID folders found. Please resolve this issue manually before creating a new backup.");
@@ -159,7 +181,7 @@ namespace SaveFile_Manager {
                 }
                 else
                 {
-                    ShowDialogMessage("Error: Selected backup folder not found.");
+                    ShowDialogMessage("Error: Selected backup folder not found. Maybe Refresh.");
                 }
             }
             catch (Exception ex)
